@@ -58,14 +58,55 @@ def get_credentials():
     return creds
 
 
+TICKER_EMOJIS = {
+    "NVDA": "🤖", "AAPL": "🍎", "MSFT": "🪟", "AMZN": "📦", "GOOGL": "🔍",
+    "GOOG": "🔍", "META": "👁️", "TSLA": "⚡", "PLTR": "🛡️", "AVGO": "💻",
+    "CRWD": "🔐", "HPE": "🖥️", "MRVL": "💎", "AMD": "🔴", "INTC": "🔵",
+    "DJT": "🏛️", "INTU": "📉", "SPY": "📊", "QQQ": "💹", "ORCL": "🔶",
+    "CRM": "☁️", "NFLX": "🎬", "DIS": "🏰", "JPM": "🏦", "GS": "🏦",
+    "XOM": "🛢️", "CVX": "🛢️", "FIVE": "🛒", "ABVX": "🧬", "SBFM": "📣",
+    "NU": "💳", "COIN": "🪙", "MSTR": "₿", "DELL": "💾", "TXN": "🔬",
+    "NOW": "☁️", "DXST": "📋", "JZ": "🤝", "NU": "💳",
+}
+
+KEYWORD_EMOJIS = [
+    (r'\b(oil|crude|brent)\b',                    '🛢️'),
+    (r'\b(iran|hormuz|ceasefire)\b',               '⚔️'),
+    (r'\b(war|strike|missile|military)\b',         '💣'),
+    (r'\b(bitcoin|btc|ethereum|eth|crypto)\b',     '₿'),
+    (r'\b(drone)\b',                               '🚁'),
+    (r'\bA\.?I\.?\b|artificial intelligence',      '🤖'),
+    (r'\b(fed|fomc|powell|rate cut|rate hike)\b',  '🏦'),
+    (r'\b(jobs report|nonfarm|payroll)\b',         '👷'),
+    (r'\b(record high|all.time high|new high)\b',  '🚀'),
+    (r'\b(semiconductor|chip|chips)\b',            '🔬'),
+    (r'\b(gold)\b',                                '🥇'),
+    (r'\b(deal|merger|acquisition)\b',             '🤝'),
+    (r'\b(earnings|beat|blowout)\b',               '💰'),
+    (r'\b(tariff|tariffs)\b',                      '🚧'),
+    (r'\b(downgrade)\b',                           '📉'),
+    (r'\b(upgrade)\b',                             '📈'),
+]
+
+def enrich_text(text):
+    """Add ticker emojis and keyword emojis to plain text content."""
+    for ticker, emoji in TICKER_EMOJIS.items():
+        text = re.sub(rf'\b{re.escape(ticker)}\b(?!\s[^\s]{{1,2}}\s)', f'{ticker} {emoji}', text)
+    for pattern, emoji in KEYWORD_EMOJIS:
+        text = re.sub(pattern, lambda m, e=emoji: f"{m.group(0)} {e}", text, count=2, flags=re.I)
+    return text
+
+
 def add_arrows(text):
-    """Convert +3.5% → ↑+3.5% in green, -2.1% → ↓-2.1% in red."""
+    """Convert +3.5% → ↑+3.5% in green, -2.1% → ↓-2.1% in red. Add 🔥 for moves ≥10%."""
     def replace(m):
         s = m.group(0)
+        val = float(re.search(r'\d+\.?\d*', s).group())
+        fire = " 🔥" if val >= 10 else ""
         if s.startswith("+"):
-            return f"<span style='color:#3a9e6a;font-weight:700'>↑{s}</span>"
+            return f"<span style='color:#3a9e6a;font-weight:700'>↑{s}</span>{fire}"
         else:
-            return f"<span style='color:#c04060;font-weight:700'>↓{s}</span>"
+            return f"<span style='color:#c04060;font-weight:700'>↓{s}</span>{fire}"
     return re.sub(r'[+\-]\d+\.?\d*%', replace, text)
 
 
@@ -130,14 +171,15 @@ def markdown_to_html(text):
             table_rows.clear()
             in_table = False
         for ts, content in current_items:
+            enriched = add_arrows(enrich_text(content))
             if ts:
                 # Timestamped item — card with colored left border
                 pill = f"<span style='display:inline-block;background:linear-gradient(135deg,#f5c5b5,#e8a090);color:#fff;font-size:9.5px;font-weight:700;letter-spacing:0.08em;padding:3px 9px;border-radius:20px;margin-right:9px;white-space:nowrap;text-transform:uppercase'>{ts}</span>"
-                out += f"<div style='margin:6px 0;padding:12px 14px;background:#fffaf8;border-left:3px solid #f0a898;border-radius:0 8px 8px 0;font-size:13.5px;line-height:1.7;color:#3a2e2e'>{pill}{add_arrows(content)}</div>"
+                out += f"<div style='margin:6px 0;padding:12px 14px;background:#fffaf8;border-left:3px solid #f0a898;border-radius:0 8px 8px 0;font-size:13.5px;line-height:1.7;color:#3a2e2e'>{pill}{enriched}</div>"
             else:
                 # Plain bullet — diamond marker
                 dot = "<span style='color:#e8b4a0;font-size:8px;vertical-align:middle;margin-right:10px;line-height:1'>◆</span>"
-                out += f"<div style='padding:10px 0;border-bottom:1px solid #f5eeea;font-size:13.5px;line-height:1.7;color:#3a2e2e'>{dot}{add_arrows(content)}</div>"
+                out += f"<div style='padding:10px 0;border-bottom:1px solid #f5eeea;font-size:13.5px;line-height:1.7;color:#3a2e2e'>{dot}{enriched}</div>"
         current_items.clear()
         return out
 
