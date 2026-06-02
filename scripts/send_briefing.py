@@ -241,7 +241,7 @@ def markdown_to_html(text):
 
   <!-- Header -->
   <div style="background:linear-gradient(135deg,#fce8e8 0%,#fdf0e8 40%,#e8f5ee 100%);padding:40px 44px 32px;text-align:center;position:relative">
-    <div style="font-size:18px;letter-spacing:0.1em;color:#c8a0a0;margin-bottom:12px">♦ &nbsp; ♦ &nbsp; ♦</div>
+    <div style="font-size:18px;letter-spacing:0.1em;color:#e8a0b8;margin-bottom:12px">&#9830;&#xFE0E; &nbsp; &#9830;&#xFE0E; &nbsp; &#9830;&#xFE0E;</div>
     <p style="margin:0 0 8px;font-size:11px;letter-spacing:0.2em;color:#b09090;font-weight:600;text-transform:uppercase">{today}</p>
     <h1 style="margin:0 0 8px;font-family:Georgia,serif;font-size:28px;font-weight:400;color:#2c1f1f;letter-spacing:-0.01em">Mandy's Morning Market Briefing</h1>
     <p style="margin:0 0 20px;font-size:11px;letter-spacing:0.18em;color:#b09090;text-transform:uppercase">Your Daily Financial Intelligence</p>
