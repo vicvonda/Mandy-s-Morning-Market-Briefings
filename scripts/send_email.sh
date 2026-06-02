@@ -1,5 +1,6 @@
 #!/bin/bash
-SUBJECT="${1:-Mandy's Morning Market Briefing}"
+DEFAULT_SUBJECT="Mandy's Morning Market Briefing"
+SUBJECT="${1:-$DEFAULT_SUBJECT}"
 BODY_FILE="${2:-/tmp/claude_briefing.md}"
 RECIPIENT="${GMAIL_USER}"
 
