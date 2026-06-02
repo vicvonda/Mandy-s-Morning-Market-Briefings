@@ -202,8 +202,8 @@ def markdown_to_html(text):
             i += 1
             continue
 
-        # Non-empty plain paragraph
-        if line.strip():
+        # Non-empty plain paragraph — skip horizontal rules and markdown artifacts
+        if line.strip() and not re.match(r'^[-*_]{2,}$', line.strip()) and not re.match(r'^\*{1,2}[^*]+\*{1,2}$', line.strip()):
             current_items.append(("", line.strip()))
         i += 1
 
