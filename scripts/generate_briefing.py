@@ -60,7 +60,7 @@ KEY RISKS
 - Risk 2
 - Risk 3
 
-Sources: [TheStreet](https://thestreet.com) · [Yahoo Finance](https://finance.yahoo.com) · [CNBC](https://cnbc.com) · [Bloomberg](https://bloomberg.com)
+Sources: List every source you actually used as markdown links. Use the real article URL where possible, not just the homepage. Format: [Publication Name](https://full-url.com/article) · [Publication Name](https://...) — include as many as you referenced, minimum 5.
 """
 
     response = client.messages.create(
