@@ -130,8 +130,14 @@ def markdown_to_html(text):
             table_rows.clear()
             in_table = False
         for ts, content in current_items:
-            pill = f"<span style='display:inline-block;background:#fde8e8;color:#a05050;font-size:10px;font-weight:700;letter-spacing:0.06em;padding:2px 8px;border-radius:20px;margin-right:8px;white-space:nowrap'>{ts}</span>" if ts else ""
-            out += f"<div style='padding:11px 0;border-bottom:1px solid #f5eeea;font-size:14px;line-height:1.65;color:#3a2e2e'>{pill}{add_arrows(content)}</div>"
+            if ts:
+                # Timestamped item — card with colored left border
+                pill = f"<span style='display:inline-block;background:linear-gradient(135deg,#f5c5b5,#e8a090);color:#fff;font-size:9.5px;font-weight:700;letter-spacing:0.08em;padding:3px 9px;border-radius:20px;margin-right:9px;white-space:nowrap;text-transform:uppercase'>{ts}</span>"
+                out += f"<div style='margin:6px 0;padding:12px 14px;background:#fffaf8;border-left:3px solid #f0a898;border-radius:0 8px 8px 0;font-size:13.5px;line-height:1.7;color:#3a2e2e'>{pill}{add_arrows(content)}</div>"
+            else:
+                # Plain bullet — diamond marker
+                dot = "<span style='color:#e8b4a0;font-size:8px;vertical-align:middle;margin-right:10px;line-height:1'>◆</span>"
+                out += f"<div style='padding:10px 0;border-bottom:1px solid #f5eeea;font-size:13.5px;line-height:1.7;color:#3a2e2e'>{dot}{add_arrows(content)}</div>"
         current_items.clear()
         return out
 
@@ -213,14 +219,20 @@ def markdown_to_html(text):
           <ul style='margin:0;padding:0;list-style:none'>{items}</ul>
         </div>"""
 
-    # Sources
+    # Sources — rendered as styled chips
     sources_html = ""
     if sources_line:
         raw = sources_line.replace("Sources:", "").strip()
-        linked = re.sub(r'\[([^\]]+)\]\(([^)]+)\)',
-                        r"<a href='\2' style='color:#7a9a8a;text-decoration:none'>\1</a>", raw)
-        linked = re.sub(r'(?<!\])\b(https?://[^\s]+)', r"<a href='\1' style='color:#7a9a8a'>\1</a>", linked)
-        sources_html = f"<p style='font-size:11px;color:#b0a090;margin-top:18px'>Sources: {linked}</p>"
+        chips = ""
+        for m in re.finditer(r'\[([^\]]+)\]\(([^)]+)\)', raw):
+            label, url = m.group(1), m.group(2)
+            chips += f"<a href='{url}' style='display:inline-block;padding:5px 12px;margin:3px 4px 3px 0;background:#f5eeea;border-radius:20px;font-size:11px;font-weight:600;color:#8a6a5a;text-decoration:none;letter-spacing:0.03em'>{label}</a>"
+        if chips:
+            sources_html = f"""
+            <div style='margin-top:24px;padding-top:18px;border-top:1px solid #f0e8e0'>
+              <div style='font-size:9.5px;font-weight:700;letter-spacing:0.18em;color:#c4a898;text-transform:uppercase;margin-bottom:10px'>Sources</div>
+              <div>{chips}</div>
+            </div>"""
 
     return f"""<!DOCTYPE html>
 <html>

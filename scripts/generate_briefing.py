@@ -9,59 +9,41 @@ def generate_briefing():
     client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
     today = datetime.now().strftime("%A, %B %-d, %Y")
 
-    prompt = f"""Today is {today}. You are generating Mandy's Morning Market Briefing.
+    prompt = f"""Today is {today}. Generate Mandy's Morning Market Briefing.
 
-Search for the latest:
-- S&P 500, Nasdaq, Dow, Russell 2000 levels and moves (previous close and today's open/premarket)
-- Top individual stock movers today (% changes and reasons)
-- Notable premarket movers with context
-- Key economic data releases and Fed activity this week
-- Major earnings reports this week and any recent beats/misses
-- Any Trump or Trump family (Eric, Don Jr., Ivanka, Jared) public statements, Truth Social posts, or news mentioning specific companies, sectors, or markets
-- Trump personal stock trades or financial disclosures (recent)
-- Trump family business activity: investments, deals, crypto, company stakes
-- DJT (Trump Media) stock price and any notable moves
-- Add timestamps wherever possible
+RULES:
+- Output ONLY the briefing. No preamble, no "I'll search for...", no meta-commentary. Start directly with the first section header.
+- Be ruthlessly concise. Max 4 bullets per subsection. Only include what's genuinely striking or actionable.
+- Skip any subsection where there's nothing material to report.
+- Add timestamps wherever possible (e.g. [June 2, premarket], [May 15, CNBC]).
 
-Generate the briefing using EXACTLY this format:
+Search for: index levels + moves, top stock movers, premarket action, key economic events this week, earnings this week, Trump/family Truth Social posts + stock trades + business deals + DJT stock price.
 
-# MANDY'S MORNING MARKET BRIEFING
-**{today} | Generated ~10:00 AM ET**
-
----
+Output using EXACTLY this format — no extra headers, no markdown bold on subsection labels:
 
 ## SECTION 1 — MARKET SNAPSHOT
 
-**[Previous close → Today] Indexes**
-- [bullets: S&P 500, Nasdaq, Dow, Russell 2000 with % moves and key drivers]
+[Previous close → Today] One-line index summary: S&P 500, Nasdaq, Dow, Russell 2000 % moves and the single biggest driver.
 
-**[Today, open] Top Individual Movers**
-- [bullets: ticker, %, reason]
+[Today, open] Top movers at open — ticker +/-% and one-line reason. Max 4.
 
-**[Today, premarket] Notable Movers**
-- [bullets: ticker, %, context]
+[Today, premarket] Notable premarket movers with context. Max 3.
 
-**[Week ahead — macro]**
-- [bullets: dates and events]
+[Week ahead — macro] Key dates only: jobs report, CPI, Fed, major earnings. Max 4 bullets.
 
-**[Earnings season]**
-- [bullets: key reports this week and themes]
+[Earnings season] Standout beats/misses this week only. Max 3 bullets.
 
 ---
 
 ## SECTION 2 — TRUMP & FAMILY ACTIVITY
 
-**[Date, source] Trump Stock Trades / Financial Activity**
-- [bullets]
+[Date, source] Trump stock trades or OGE disclosures — what he bought/sold and when.
 
-**[Date, source] Trump Public Statements**
-- [what he said, market reaction]
+[Date, source] Trump Truth Social or public statements naming companies/sectors — exact quote if possible, market reaction.
 
-**[Ongoing] Trump Family Business Activity**
-- [Eric, Don Jr. deals, investments, crypto]
+[Ongoing] Trump sons (Eric, Don Jr.) deals, investments, crypto activity this week.
 
-**[Today] DJT Stock**
-- [price, move, context]
+[Today] DJT price, % move, any news.
 
 ---
 
@@ -69,19 +51,16 @@ Generate the briefing using EXACTLY this format:
 
 | Ticker / Sector | Market Signal | Trump/Family Angle |
 |---|---|---|
-| [only include if in BOTH sections above] | | |
+| Only rows that appear in BOTH sections above | | |
 
 ---
 
-## KEY RISKS
-- Risk 1
+KEY RISKS
+- Risk 1 (most urgent)
 - Risk 2
 - Risk 3
-- Risk 4
 
----
-
-*Sources: [TheStreet](https://thestreet.com) · [Yahoo Finance](https://finance.yahoo.com) · [CNBC](https://cnbc.com) · [Bloomberg](https://bloomberg.com)*
+Sources: [TheStreet](https://thestreet.com) · [Yahoo Finance](https://finance.yahoo.com) · [CNBC](https://cnbc.com) · [Bloomberg](https://bloomberg.com)
 """
 
     response = client.messages.create(
@@ -99,6 +78,12 @@ Generate the briefing using EXACTLY this format:
     for block in response.content:
         if hasattr(block, "text"):
             briefing += block.text
+
+    # Strip any preamble before the first section header
+    import re
+    match = re.search(r'(##\s*SECTION|SECTION\s+1)', briefing)
+    if match:
+        briefing = briefing[match.start():]
 
     output_path = "/tmp/claude_briefing.md"
     with open(output_path, "w") as f:
