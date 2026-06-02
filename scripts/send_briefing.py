@@ -69,44 +69,37 @@ TICKER_EMOJIS = {
     "NOW": "☁️", "DXST": "📋", "JZ": "🤝", "NU": "💳",
 }
 
-KEYWORD_EMOJIS = [
-    (r'\b(oil|crude|brent)\b',                    '🛢️'),
-    (r'\b(iran|hormuz|ceasefire)\b',               '⚔️'),
-    (r'\b(war|strike|missile|military)\b',         '💣'),
-    (r'\b(bitcoin|btc|ethereum|eth|crypto)\b',     '₿'),
-    (r'\b(drone)\b',                               '🚁'),
-    (r'\bA\.?I\.?\b|artificial intelligence',      '🤖'),
-    (r'\b(fed|fomc|powell|rate cut|rate hike)\b',  '🏦'),
-    (r'\b(jobs report|nonfarm|payroll)\b',         '👷'),
-    (r'\b(record high|all.time high|new high)\b',  '🚀'),
-    (r'\b(semiconductor|chip|chips)\b',            '🔬'),
-    (r'\b(gold)\b',                                '🥇'),
-    (r'\b(deal|merger|acquisition)\b',             '🤝'),
-    (r'\b(earnings|beat|blowout)\b',               '💰'),
-    (r'\b(tariff|tariffs)\b',                      '🚧'),
-    (r'\b(downgrade)\b',                           '📉'),
-    (r'\b(upgrade)\b',                             '📈'),
+BOLD_PATTERNS = [
+    r'\$[\d,.]+(?:\s*(?:billion|million|trillion|[BMT])\b)?',
+    r'\b(?:record high|all-time high|new high|historic high)\b',
+    r'\b(?:surged?|plunged?|soared?|crashed?|spiked?|tanked?|halted?|rallied?)\b',
+    r'\b(?:beat|beats|miss|misses|blowout|blockbuster)\b',
+    r'\b(?:downgraded?|upgraded?)\b',
+    r'\b(?:Iran|Hormuz|Fed|FOMC|CPI|PPI|GDP|Truth Social)\b',
+    r'\b(?:tariff|tariffs|sanction[s]?)\b',
 ]
 
+def bold_important(text):
+    """Wrap skimmable terms in bold."""
+    for pattern in BOLD_PATTERNS:
+        text = re.sub(pattern, lambda m: f"<b>{m.group(0)}</b>", text, flags=re.I)
+    return text
+
 def enrich_text(text):
-    """Add ticker emojis and keyword emojis to plain text content."""
+    """Bold and add emoji to known ticker symbols."""
     for ticker, emoji in TICKER_EMOJIS.items():
-        text = re.sub(rf'\b{re.escape(ticker)}\b(?!\s[^\s]{{1,2}}\s)', f'{ticker} {emoji}', text)
-    for pattern, emoji in KEYWORD_EMOJIS:
-        text = re.sub(pattern, lambda m, e=emoji: f"{m.group(0)} {e}", text, count=2, flags=re.I)
+        text = re.sub(rf'\b{re.escape(ticker)}\b(?!\s[^\s]{{1,2}}\s)', f'<b>{ticker}</b> {emoji}', text)
     return text
 
 
 def add_arrows(text):
-    """Convert +3.5% → ↑+3.5% in green, -2.1% → ↓-2.1% in red. Add 🔥 for moves ≥10%."""
+    """Convert +3.5% → ↑+3.5% in green, -2.1% → ↓-2.1% in red."""
     def replace(m):
         s = m.group(0)
-        val = float(re.search(r'\d+\.?\d*', s).group())
-        fire = " 🔥" if val >= 10 else ""
         if s.startswith("+"):
-            return f"<span style='color:#3a9e6a;font-weight:700'>↑{s}</span>{fire}"
+            return f"<span style='color:#3a9e6a;font-weight:700'>↑{s}</span>"
         else:
-            return f"<span style='color:#c04060;font-weight:700'>↓{s}</span>{fire}"
+            return f"<span style='color:#c04060;font-weight:700'>↓{s}</span>"
     return re.sub(r'[+\-]\d+\.?\d*%', replace, text)
 
 
@@ -171,7 +164,7 @@ def markdown_to_html(text):
             table_rows.clear()
             in_table = False
         for ts, content in current_items:
-            enriched = add_arrows(enrich_text(content))
+            enriched = add_arrows(enrich_text(bold_important(content)))
             if ts:
                 # Timestamped item — card with colored left border
                 pill = f"<span style='display:inline-block;background:linear-gradient(135deg,#f5c5b5,#e8a090);color:#fff;font-size:9.5px;font-weight:700;letter-spacing:0.08em;padding:3px 9px;border-radius:20px;margin-right:9px;white-space:nowrap;text-transform:uppercase'>{ts}</span>"
@@ -283,7 +276,7 @@ def markdown_to_html(text):
 
   <!-- Header -->
   <div style="background:linear-gradient(135deg,#fce8e8 0%,#fdf0e8 40%,#e8f5ee 100%);padding:40px 44px 32px;text-align:center;position:relative">
-    <div style="font-size:18px;letter-spacing:0.1em;color:#e8a0b8;margin-bottom:12px">&#9830;&#xFE0E; &nbsp; &#9830;&#xFE0E; &nbsp; &#9830;&#xFE0E;</div>
+    <div style="font-size:16px;letter-spacing:0.2em;color:#e8a0b8;margin-bottom:12px">&#x25C6; &nbsp; &#x25C6; &nbsp; &#x25C6;</div>
     <p style="margin:0 0 8px;font-size:11px;letter-spacing:0.2em;color:#b09090;font-weight:600;text-transform:uppercase">{today}</p>
     <h1 style="margin:0 0 8px;font-family:Georgia,serif;font-size:28px;font-weight:400;color:#2c1f1f;letter-spacing:-0.01em">Mandy's Morning Market Briefing</h1>
     <p style="margin:0 0 20px;font-size:11px;letter-spacing:0.18em;color:#b09090;text-transform:uppercase">Your Daily Financial Intelligence</p>
